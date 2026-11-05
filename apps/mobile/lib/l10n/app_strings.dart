@@ -12,8 +12,9 @@ class AppStrings {
     required this.journeyNotAvailable,
     required this.charactersTitle,
     required this.charactersSubtitle,
-    required this.erenDescription,
-    required this.elifDescription,
+    required this.privateConversationAction,
+    required this.kankalarRoomTitle,
+    required this.kankalarRoomDescription,
     required this.scenariosTitle,
     required this.scenariosSubtitle,
     required this.dailyScenario,
@@ -27,6 +28,15 @@ class AppStrings {
     required this.navProgress,
     required this.navProfile,
     required this.comingSoon,
+    required this.erenConversationTitle,
+    required this.elifConversationTitle,
+    required this.kankalarConversationTitle,
+    required this.mockEngineNotice,
+    required this.conversationEmptyPrompt,
+    required this.messageInputHint,
+    required this.sendMessage,
+    required this.gentleCorrection,
+    required this.replyError,
   });
 
   final String languageButton;
@@ -39,8 +49,9 @@ class AppStrings {
   final String journeyNotAvailable;
   final String charactersTitle;
   final String charactersSubtitle;
-  final String erenDescription;
-  final String elifDescription;
+  final String privateConversationAction;
+  final String kankalarRoomTitle;
+  final String kankalarRoomDescription;
   final String scenariosTitle;
   final String scenariosSubtitle;
   final String dailyScenario;
@@ -54,6 +65,15 @@ class AppStrings {
   final String navProgress;
   final String navProfile;
   final String comingSoon;
+  final String erenConversationTitle;
+  final String elifConversationTitle;
+  final String kankalarConversationTitle;
+  final String mockEngineNotice;
+  final String conversationEmptyPrompt;
+  final String messageInputHint;
+  final String sendMessage;
+  final String gentleCorrection;
+  final String replyError;
 
   static AppStrings of(Locale locale) {
     return locale.languageCode == 'tr' ? turkish : arabic;
@@ -69,9 +89,10 @@ class AppStrings {
     journeyAction: 'ابدأ رحلة التعلّم',
     journeyNotAvailable: 'رحلة التعلّم لم تُربط بخدمة بعد.',
     charactersTitle: 'أصدقاء رحلتك',
-    charactersSubtitle: 'يتناوبان على مساعدتك بحسب سياق الحوار.',
-    erenDescription: 'ودود وعملي، ويجعل الحديث خفيفًا وواضحًا.',
-    elifDescription: 'دافئة ومشجّعة، وتساعدك على التقدّم بثقة.',
+    charactersSubtitle: 'اختر محادثة خاصة أو شاركهما معًا.',
+    privateConversationAction: 'محادثة خاصة',
+    kankalarRoomTitle: 'غرفة Kankalar',
+    kankalarRoomDescription: 'تدرّب مع Eren وElif في محادثة واحدة.',
     scenariosTitle: 'مواقف يومية',
     scenariosSubtitle: 'تدرّب على التركية في مواقف من الحياة.',
     dailyScenario: 'موقف يومي',
@@ -85,6 +106,16 @@ class AppStrings {
     navProgress: 'التقدّم',
     navProfile: 'حسابي',
     comingSoon: 'هذه الصفحة غير متاحة في هذه المرحلة.',
+    erenConversationTitle: 'محادثة مع Eren',
+    elifConversationTitle: 'محادثة مع Elif',
+    kankalarConversationTitle: 'غرفة Kankalar',
+    mockEngineNotice:
+        'وضع تجريبي: ردود ثابتة لاختبار الواجهة، وليست ذكاءً اصطناعيًا.',
+    conversationEmptyPrompt: 'اكتب رسالة بالتركية أو العربية لبدء المحادثة.',
+    messageInputHint: 'اكتب رسالتك...',
+    sendMessage: 'إرسال الرسالة',
+    gentleCorrection: 'يمكنك قول:',
+    replyError: 'تعذر إنشاء رد تجريبي. حاول مرة أخرى.',
   );
 
   static const turkish = AppStrings(
@@ -97,22 +128,34 @@ class AppStrings {
     journeyAction: 'Öğrenme yolculuğuna başla',
     journeyNotAvailable: 'Öğrenme yolculuğu henüz bir hizmete bağlı değil.',
     charactersTitle: 'Yol arkadaşların',
-    charactersSubtitle: 'Sohbetin akışına göre sana destek olurlar.',
-    erenDescription: 'Dost canlısı ve pratiktir; sohbeti doğal ve anlaşılır tutar.',
-    elifDescription: 'Sıcakkanlı ve cesaret verici; güvenle ilerlemene yardım eder.',
+    charactersSubtitle: 'Bire bir sohbet et veya ikisiyle birlikte pratik yap.',
+    privateConversationAction: 'Bire bir sohbet',
+    kankalarRoomTitle: 'Kankalar odası',
+    kankalarRoomDescription: 'Eren ve Elif ile aynı sohbette pratik yap.',
     scenariosTitle: 'Günlük durumlar',
     scenariosSubtitle: 'Türkçeyi günlük durumlar üzerinden pratik et.',
     dailyScenario: 'Günlük pratik',
     levelTitle: 'Seviyen ve ilerlemen',
     levelUnknownTitle: 'Seviyen henüz belirlenmedi',
     levelUnknownBody:
-      'İlk değerlendirmeden sonra seviyen ve ilerlemen burada görünür.',
+        'İlk değerlendirmeden sonra seviyen ve ilerlemen burada görünür.',
     levelAction: 'Seviye değerlendirmesine başla',
-    assessmentNotAvailable: 'Öğrenme yolu bağlanmadan değerlendirme kullanılamaz.',
+    assessmentNotAvailable:
+        'Öğrenme yolu bağlanmadan değerlendirme kullanılamaz.',
     navHome: 'Ana sayfa',
     navLearn: 'Öğren',
     navProgress: 'İlerleme',
     navProfile: 'Profilim',
     comingSoon: 'Bu sayfa henüz kullanılamıyor.',
+    erenConversationTitle: 'Eren ile sohbet',
+    elifConversationTitle: 'Elif ile sohbet',
+    kankalarConversationTitle: 'Kankalar odası',
+    mockEngineNotice: 'Deneme modu: Arayüzü sınamak için sabit yanıtlar kullanılır; yapay zekâ değildir.',
+    conversationEmptyPrompt:
+        'Sohbete başlamak için Türkçe veya Arapça bir mesaj yaz.',
+    messageInputHint: 'Mesajını yaz...',
+    sendMessage: 'Mesajı gönder',
+    gentleCorrection: 'Şöyle diyebilirsin:',
+    replyError: 'Deneme yanıtı oluşturulamadı. Lütfen tekrar dene.',
   );
 }

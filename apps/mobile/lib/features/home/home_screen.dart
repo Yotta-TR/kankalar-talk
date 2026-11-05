@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../app/kankalar_talk_app.dart';
+import '../conversation/domain/conversation_models.dart';
+import '../conversation/presentation/conversation_screen.dart';
 import '../../l10n/app_strings.dart';
 import 'home_content.dart';
 
@@ -61,7 +63,21 @@ class HomeScreen extends StatelessWidget {
                             subtitle: strings.charactersSubtitle,
                           ),
                           const SizedBox(height: 14),
-                          _CharacterSection(strings: strings),
+                          _CharacterSection(
+                            strings: strings,
+                            onErenTap: () => _openConversation(
+                              context,
+                              ConversationMode.eren,
+                            ),
+                            onElifTap: () => _openConversation(
+                              context,
+                              ConversationMode.elif,
+                            ),
+                            onKankalarTap: () => _openConversation(
+                              context,
+                              ConversationMode.kankalar,
+                            ),
+                          ),
                           const SizedBox(height: 32),
                           _SectionHeading(
                             title: strings.scenariosTitle,
@@ -130,6 +146,14 @@ class HomeScreen extends StatelessWidget {
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
   }
+
+  void _openConversation(BuildContext context, ConversationMode mode) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ConversationScreen(mode: mode, locale: locale),
+      ),
+    );
+  }
 }
 
 class _HomeHeader extends StatelessWidget {
@@ -154,11 +178,7 @@ class _HomeHeader extends StatelessWidget {
             color: AppColors.forest,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(
-            Icons.forum_rounded,
-            color: Colors.white,
-            size: 22,
-          ),
+          child: const Icon(Icons.forum_rounded, color: Colors.white, size: 22),
         ),
         const SizedBox(width: 11),
         const Expanded(
@@ -175,9 +195,7 @@ class _HomeHeader extends StatelessWidget {
         Tooltip(
           message: strings.languageTooltip,
           child: OutlinedButton.icon(
-            onPressed: () => onLocaleChanged(
-              Locale(isArabic ? 'tr' : 'ar'),
-            ),
+            onPressed: () => onLocaleChanged(Locale(isArabic ? 'tr' : 'ar')),
             icon: const Icon(Icons.language_rounded, size: 18),
             label: Text(strings.languageButton),
             style: OutlinedButton.styleFrom(
@@ -364,9 +382,17 @@ class _SectionHeading extends StatelessWidget {
 }
 
 class _CharacterSection extends StatelessWidget {
-  const _CharacterSection({required this.strings});
+  const _CharacterSection({
+    required this.strings,
+    required this.onErenTap,
+    required this.onElifTap,
+    required this.onKankalarTap,
+  });
 
   final AppStrings strings;
+  final VoidCallback onErenTap;
+  final VoidCallback onElifTap;
+  final VoidCallback onKankalarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -377,12 +403,18 @@ class _CharacterSection extends StatelessWidget {
           icon: Icons.sentiment_satisfied_alt_rounded,
           accent: AppColors.coral,
           paleAccent: AppColors.coralPale,
+          actionLabel: strings.privateConversationAction,
+          onTap: onErenTap,
+          key: const Key('conversation-eren'),
         );
         final elif = _CharacterCard(
           name: 'Elif',
           icon: Icons.waving_hand_rounded,
           accent: AppColors.forest,
           paleAccent: AppColors.mint,
+          actionLabel: strings.privateConversationAction,
+          onTap: onElifTap,
+          key: const Key('conversation-elif'),
         );
 
         if (constraints.maxWidth < 560) {
@@ -391,14 +423,22 @@ class _CharacterSection extends StatelessWidget {
               eren,
               const SizedBox(height: 10),
               elif,
+              const SizedBox(height: 10),
+              _KankalarRoomCard(strings: strings, onTap: onKankalarTap),
             ],
           );
         }
-        return Row(
+        return Column(
           children: [
-            Expanded(child: eren),
-            const SizedBox(width: 12),
-            Expanded(child: elif),
+            Row(
+              children: [
+                Expanded(child: eren),
+                const SizedBox(width: 12),
+                Expanded(child: elif),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _KankalarRoomCard(strings: strings, onTap: onKankalarTap),
           ],
         );
       },
@@ -412,63 +452,132 @@ class _CharacterCard extends StatelessWidget {
     required this.icon,
     required this.accent,
     required this.paleAccent,
+    required this.actionLabel,
+    required this.onTap,
+    super.key,
   });
 
   final String name;
   final IconData icon;
   final Color accent;
   final Color paleAccent;
+  final String actionLabel;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 112),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: paleAccent,
-              borderRadius: BorderRadius.circular(8),
+    return InkWell(
+      key: key,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 112),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: paleAccent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: accent, size: 23),
             ),
-            child: Icon(icon, color: accent, size: 23),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  textDirection: TextDirection.ltr,
-                  style: TextStyle(
-                    color: accent,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    textDirection: TextDirection.ltr,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  Text(
+                    actionLabel,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KankalarRoomCard extends StatelessWidget {
+  const _KankalarRoomCard({required this.strings, required this.onTap});
+
+  final AppStrings strings;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: const Key('conversation-kankalar'),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: AppColors.mint,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.groups_rounded, color: AppColors.forest),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.kankalarRoomTitle,
+                    style: const TextStyle(
+                      color: AppColors.ink,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    strings.kankalarRoomDescription,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_rounded, color: AppColors.forest),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _ScenarioSection extends StatelessWidget {
-  const _ScenarioSection({
-    required this.strings,
-    required this.isArabic,
-  });
+  const _ScenarioSection({required this.strings, required this.isArabic});
 
   final AppStrings strings;
   final bool isArabic;
@@ -480,8 +589,8 @@ class _ScenarioSection extends StatelessWidget {
         final columns = constraints.maxWidth >= 760
             ? 3
             : constraints.maxWidth >= 500
-                ? 2
-                : 1;
+            ? 2
+            : 1;
         const spacing = 10.0;
         final tileWidth =
             (constraints.maxWidth - spacing * (columns - 1)) / columns;
@@ -563,10 +672,7 @@ class _ScenarioTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   scenario.descriptionFor(isArabic),
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
                 ),
               ],
             ),
@@ -653,11 +759,7 @@ class _LevelSection extends StatelessWidget {
           if (constraints.maxWidth < 540) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                information,
-                const SizedBox(height: 14),
-                action,
-              ],
+              children: [information, const SizedBox(height: 14), action],
             );
           }
           return Row(
