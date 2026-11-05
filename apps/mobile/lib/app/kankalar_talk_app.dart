@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../features/home/home_screen.dart';
 
@@ -23,6 +24,11 @@ class _KankalarTalkAppState extends State<KankalarTalkApp> {
       debugShowCheckedModeBanner: false,
       locale: _locale,
       supportedLocales: const [Locale('ar'), Locale('tr')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

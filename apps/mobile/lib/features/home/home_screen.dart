@@ -374,14 +374,12 @@ class _CharacterSection extends StatelessWidget {
       builder: (context, constraints) {
         final eren = _CharacterCard(
           name: 'Eren',
-          description: strings.erenDescription,
           icon: Icons.sentiment_satisfied_alt_rounded,
           accent: AppColors.coral,
           paleAccent: AppColors.coralPale,
         );
         final elif = _CharacterCard(
           name: 'Elif',
-          description: strings.elifDescription,
           icon: Icons.waving_hand_rounded,
           accent: AppColors.forest,
           paleAccent: AppColors.mint,
@@ -411,14 +409,12 @@ class _CharacterSection extends StatelessWidget {
 class _CharacterCard extends StatelessWidget {
   const _CharacterCard({
     required this.name,
-    required this.description,
     required this.icon,
     required this.accent,
     required this.paleAccent,
   });
 
   final String name;
-  final String description;
   final IconData icon;
   final Color accent;
   final Color paleAccent;
@@ -457,15 +453,6 @@ class _CharacterCard extends StatelessWidget {
                     color: accent,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 13,
-                    height: 1.45,
                   ),
                 ),
               ],
