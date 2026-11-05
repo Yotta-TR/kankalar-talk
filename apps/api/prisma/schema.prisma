@@ -6,3 +6,91 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum ConversationMode {
+  PRIVATE
+  KANKALAR_ROOM
+}
+
+enum Character {
+  EREN
+  ELIF
+}
+
+enum MessageSpeaker {
+  LEARNER
+  CHARACTER
+}
+
+enum MessageRequestStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id        String                @id @default(uuid()) @db.Uuid
+  createdAt DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  sessions  ConversationSession[]
+  requests  MessageRequest[]
+
+  @@map("users")
+}
+
+model ConversationSession {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  mode      ConversationMode
+  character Character?
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  requests  MessageRequest[]
+
+  @@index([userId, createdAt])
+  @@unique([id, userId])
+  @@map("conversation_sessions")
+}
+
+model Message {
+  id               String              @id @default(uuid()) @db.Uuid
+  sessionId        String              @map("session_id") @db.Uuid
+  sequenceNo       Int                 @map("sequence_no")
+  speaker          MessageSpeaker
+  character        Character?
+  text             String
+  correction       Json?
+  explanation      Json?
+  requestId        String?             @unique @map("request_id") @db.Uuid
+  replyToMessageId String?             @unique @map("reply_to_message_id") @db.Uuid
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  session          ConversationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  request          MessageRequest?     @relation("RequestUserMessage", fields: [requestId, sessionId], references: [id, sessionId], onDelete: NoAction)
+  replyTo          Message?            @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  reply            Message?            @relation("MessageReplies")
+
+  @@unique([requestId, sessionId])
+  @@unique([sessionId, sequenceNo])
+  @@index([sessionId, createdAt])
+  @@map("messages")
+}
+
+model MessageRequest {
+  id              String               @id @default(uuid()) @db.Uuid
+  userId          String               @map("user_id") @db.Uuid
+  sessionId       String               @map("session_id") @db.Uuid
+  clientRequestId String               @map("client_request_id")
+  requestHash     String               @map("request_hash")
+  status          MessageRequestStatus @default(PENDING)
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session         ConversationSession  @relation(fields: [sessionId, userId], references: [id, userId], onDelete: Cascade)
+  userMessage     Message?             @relation("RequestUserMessage")
+
+  @@unique([userId, clientRequestId])
+  @@unique([id, sessionId])
+  @@index([sessionId, createdAt])
+  @@map("message_requests")
+}

@@ -23,7 +23,9 @@
     "test:e2e": "prisma generate && jest --config test/jest-e2e.json",
     "typecheck": "prisma generate && tsc --noEmit -p tsconfig.build.json",
     "prisma:generate": "prisma generate",
-    "prisma:validate": "prisma validate"
+    "prisma:validate": "prisma validate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@nestjs/common": "11.2.8",
