@@ -203,6 +203,31 @@ describe("ConversationRepository", () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it("loads the saved character response through the learner message relation", async () => {
+    const savedRequest = {
+      id: messageRequestId,
+      userMessage: {
+        id: "00000000-0000-4000-8000-000000000004",
+        reply: { id: "00000000-0000-4000-8000-000000000005" },
+      },
+    };
+    const findUnique = jest.fn().mockResolvedValue(savedRequest);
+    const client = {
+      messageRequest: { findUnique },
+    } as unknown as PrismaService;
+    const subject = new ConversationRepository(client);
+
+    await expect(
+      subject.findMessageRequestResult(userId, "request-1"),
+    ).resolves.toBe(savedRequest);
+    expect(findUnique).toHaveBeenCalledWith({
+      where: {
+        userId_clientRequestId: { userId, clientRequestId: "request-1" },
+      },
+      include: { userMessage: { include: { reply: true } } },
+    });
+  });
+
   it("does not reserve a message for a session owned by another user", async () => {
     transaction.$queryRaw.mockResolvedValue([]);
 

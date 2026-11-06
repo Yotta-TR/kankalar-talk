@@ -151,6 +151,19 @@ export class ConversationRepository {
     }
   }
 
+  findMessageRequestResult(userId: string, clientRequestId: string) {
+    return this.prisma.messageRequest.findUnique({
+      where: {
+        userId_clientRequestId: { userId, clientRequestId },
+      },
+      include: {
+        userMessage: {
+          include: { reply: true },
+        },
+      },
+    });
+  }
+
   async completeMessageRequest(data: CompleteMessageRequestRecord) {
     if (!data.text.trim() || data.text.length > MAX_MESSAGE_LENGTH) {
       throw new BadRequestException(

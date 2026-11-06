@@ -12,6 +12,7 @@ export type LearningNeed = "practical_conversation" | "encouraging_practice";
 
 export interface DialogueTurnInput {
   learningNeed: LearningNeed;
+  character?: Character;
   learningLevel: "A1" | "A2" | "B1";
   scenarioContext: string;
   recentTurns: ConversationTurn[];
@@ -29,7 +30,8 @@ export class DialogueCoordinatorService {
     character: Character;
     response: ConversationGenerationResponse;
   }> {
-    const character = this.selectCharacter(input.learningNeed);
+    const character =
+      input.character ?? this.selectCharacter(input.learningNeed);
     const response = await this.conversationEngine.generate({
       character,
       characterInstructions: CHARACTER_INSTRUCTIONS[character],
