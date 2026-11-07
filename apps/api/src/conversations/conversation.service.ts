@@ -98,7 +98,9 @@ export class ConversationService {
     validateClientRequestId(clientRequestId);
     validateMessageLength(text, "Message");
 
-    const requestHash = createHash("sha256").update(text, "utf8").digest("hex");
+    const requestHash = createHash("sha256")
+      .update(JSON.stringify({ text, learningNeed }), "utf8")
+      .digest("hex");
     const reservation = await this.repository.reserveMessageRequest({
       userId: user.userId,
       sessionId,
@@ -122,11 +124,12 @@ export class ConversationService {
       if (!saved?.userMessage?.reply) {
         throw new Error("Completed message request has no saved response");
       }
+      const { reply, ...learnerMessage } = saved.userMessage;
       return {
         requestId: saved.id,
         status: saved.status,
-        learnerMessage: saved.userMessage,
-        response: saved.userMessage.reply,
+        learnerMessage,
+        response: reply,
         duplicate: true,
       };
     }
@@ -157,7 +160,7 @@ export class ConversationService {
           character: privateCharacter,
           learningLevel: "A1",
           scenarioContext:
-            "A1-level everyday English conversation practice. Keep the exchange friendly, concise, and suitable for a beginner.",
+            "A1-level everyday Turkish conversation practice. Keep the exchange friendly, concise, and suitable for a beginner.",
           recentTurns,
           learnerMessage: text,
         });

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { Logger } from "@nestjs/common";
+import { ConflictException, Logger } from "@nestjs/common";
 import {
   Character,
   ConversationMode,
@@ -87,7 +87,7 @@ describe("ConversationService", () => {
     });
   });
 
-  it("hashes the exact message and scopes the idempotency key to the trusted user", async () => {
+  it("hashes the exact message and default learning need for the trusted user", async () => {
     repository.reserveMessageRequest.mockResolvedValue({
       duplicate: true,
       request: { status: MessageRequestStatus.PENDING },
@@ -101,9 +101,92 @@ describe("ConversationService", () => {
       userId: user.userId,
       sessionId: "session-id",
       clientRequestId: "request-1",
-      requestHash: createHash("sha256").update("Merhaba").digest("hex"),
+      requestHash: createHash("sha256")
+        .update(
+          JSON.stringify({
+            text: "Merhaba",
+            learningNeed: "practical_conversation",
+          }),
+          "utf8",
+        )
+        .digest("hex"),
       text: "Merhaba",
     });
+  });
+
+  it("uses the default learning need in the request hash and hashes different needs differently", async () => {
+    repository.reserveMessageRequest.mockResolvedValue({
+      duplicate: true,
+      request: { status: MessageRequestStatus.PENDING },
+    } as never);
+
+    await expect(
+      service.submitMessage(user, "session-id", "request-1", "Merhaba"),
+    ).rejects.toThrow("still processing");
+    const defaultHash =
+      repository.reserveMessageRequest.mock.calls[0]![0].requestHash;
+
+    await expect(
+      service.submitMessage(
+        user,
+        "session-id",
+        "request-2",
+        "Merhaba",
+        "practical_conversation",
+      ),
+    ).rejects.toThrow("still processing");
+    const explicitDefaultHash =
+      repository.reserveMessageRequest.mock.calls[1]![0].requestHash;
+
+    await expect(
+      service.submitMessage(
+        user,
+        "session-id",
+        "request-3",
+        "Merhaba",
+        "encouraging_practice",
+      ),
+    ).rejects.toThrow("still processing");
+    const otherLearningNeedHash =
+      repository.reserveMessageRequest.mock.calls[2]![0].requestHash;
+
+    expect(defaultHash).toBe(explicitDefaultHash);
+    expect(otherLearningNeedHash).not.toBe(defaultHash);
+  });
+
+  it("rejects a reused client request ID with a different learning need without generating a response", async () => {
+    repository.reserveMessageRequest.mockRejectedValue(
+      new ConflictException(
+        "clientRequestId was already used with a different request",
+      ),
+    );
+
+    await expect(
+      service.submitMessage(
+        user,
+        "session-id",
+        "request-1",
+        "Merhaba",
+        "encouraging_practice",
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+
+    expect(repository.reserveMessageRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientRequestId: "request-1",
+        requestHash: createHash("sha256")
+          .update(
+            JSON.stringify({
+              text: "Merhaba",
+              learningNeed: "encouraging_practice",
+            }),
+            "utf8",
+          )
+          .digest("hex"),
+      }),
+    );
+    expect(dialogueCoordinator.generateNextTurn).not.toHaveBeenCalled();
+    expect(repository.findSession).not.toHaveBeenCalled();
   });
 
   it("rejects learner messages longer than 4000 characters", async () => {
@@ -140,13 +223,17 @@ describe("ConversationService", () => {
     expect(repository.completeMessageRequest).not.toHaveBeenCalled();
   });
 
-  it("uses the private session character and persists generated correction and explanation", async () => {
-    repository.reserveMessageRequest.mockResolvedValue({
+  it("uses the private session character, Turkish context, and persists the generated response", async () => {
+    repository.reserveMessageRequest.mockResolvedValueOnce({
       duplicate: false,
       request: {
         id: "request-id",
         status: MessageRequestStatus.PENDING,
-        userMessage: { id: "learner-message-id" },
+        userMessage: {
+          id: "learner-message-id",
+          speaker: "LEARNER",
+          text: "Merhaba",
+        },
       },
     } as never);
     repository.findSession.mockResolvedValue({
@@ -173,19 +260,34 @@ describe("ConversationService", () => {
       request: {
         id: "request-id",
         status: MessageRequestStatus.COMPLETED,
-        userMessage: { id: "learner-message-id" },
+        userMessage: {
+          id: "learner-message-id",
+          speaker: "LEARNER",
+          text: "Merhaba",
+        },
       },
-      response: { id: "response-id" },
+      response: {
+        id: "response-id",
+        speaker: "CHARACTER",
+        text: "Merhaba!",
+      },
       duplicate: false,
     } as never);
 
-    await service.submitMessage(user, "session-id", "request-1", "Merhaba");
+    const firstResponse = await service.submitMessage(
+      user,
+      "session-id",
+      "request-1",
+      "Merhaba",
+    );
 
     expect(dialogueCoordinator.generateNextTurn).toHaveBeenCalledWith(
       expect.objectContaining({
         learningNeed: "practical_conversation",
         character: "Elif",
         learningLevel: "A1",
+        scenarioContext:
+          "A1-level everyday Turkish conversation practice. Keep the exchange friendly, concise, and suitable for a beginner.",
         recentTurns: [{ speaker: "character", text: "Hello!" }],
         learnerMessage: "Merhaba",
       }),
@@ -199,6 +301,53 @@ describe("ConversationService", () => {
         explanation: expect.objectContaining({ language: "ar" }),
       }),
     );
+    expect(firstResponse).toEqual({
+      requestId: "request-id",
+      status: MessageRequestStatus.COMPLETED,
+      learnerMessage: {
+        id: "learner-message-id",
+        speaker: "LEARNER",
+        text: "Merhaba",
+      },
+      response: {
+        id: "response-id",
+        speaker: "CHARACTER",
+        text: "Merhaba!",
+      },
+      duplicate: false,
+    });
+
+    repository.reserveMessageRequest.mockResolvedValueOnce({
+      duplicate: true,
+      request: { status: MessageRequestStatus.COMPLETED },
+    } as never);
+    repository.findMessageRequestResult.mockResolvedValue({
+      id: "request-id",
+      status: MessageRequestStatus.COMPLETED,
+      userMessage: {
+        id: "learner-message-id",
+        speaker: "LEARNER",
+        text: "Merhaba",
+        reply: {
+          id: "response-id",
+          speaker: "CHARACTER",
+          text: "Merhaba!",
+        },
+      },
+    } as never);
+
+    const repeatedResponse = await service.submitMessage(
+      user,
+      "session-id",
+      "request-1",
+      "Merhaba",
+    );
+    expect(repeatedResponse).toEqual({
+      ...firstResponse,
+      duplicate: true,
+    });
+    expect(repeatedResponse.learnerMessage).not.toHaveProperty("reply");
+    expect(dialogueCoordinator.generateNextTurn).toHaveBeenCalledTimes(1);
   });
 
   it("returns a saved completed response without generating another turn", async () => {
@@ -211,14 +360,22 @@ describe("ConversationService", () => {
       status: MessageRequestStatus.COMPLETED,
       userMessage: {
         id: "learner-message-id",
+        speaker: "LEARNER",
+        text: "Merhaba",
         reply: { id: "response-id", text: "Hello!" },
       },
     } as never);
 
     await expect(
       service.submitMessage(user, "session-id", "request-1", "Merhaba"),
-    ).resolves.toMatchObject({
+    ).resolves.toEqual({
       requestId: "request-id",
+      status: MessageRequestStatus.COMPLETED,
+      learnerMessage: {
+        id: "learner-message-id",
+        speaker: "LEARNER",
+        text: "Merhaba",
+      },
       response: { id: "response-id", text: "Hello!" },
       duplicate: true,
     });
